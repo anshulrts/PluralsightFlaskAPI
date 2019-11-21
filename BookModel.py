@@ -18,8 +18,11 @@ class Book(db.Model):
         db.session.add(new_book)
         db.session.commit()
 
+    def json(self):
+        return { "name": self.name, "price": self.price, "isbn": self.isbn }
+
     def get_all_books():
-        return Book.query.all()
+        return [Book.json(book) for book in Book.query.all()]
     
     def get_book(_isbn):
         return Book.query.filter_by(isbn=_isbn).first()
