@@ -25,11 +25,12 @@ class Book(db.Model):
         return [Book.json(book) for book in Book.query.all()]
     
     def get_book(_isbn):
-        return Book.query.filter_by(isbn=_isbn).first()
+        return Book.json(Book.query.filter_by(isbn=_isbn).first())
 
     def delete_book(_isbn):
-        Book.query.filter_by(isbn=_isbn).delete()
+        is_successful = Book.query.filter_by(isbn=_isbn).delete()
         db.session.commit()
+        return bool(is_successful)
 
     def update_book_name(_isbn, _name):
         update_book = Book.query.filter_by(isbn=_isbn).first()
