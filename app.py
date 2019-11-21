@@ -3,9 +3,25 @@ import json
 from BookModel import *
 from settings import *
 
+import jwt, datetime
+
+app.config['SECRET_KEY'] = 'meow'
+
+@app.route('/login')
+def get_token():
+    expiration_date = datetime.datetime.utcnow() + datetime.timedelta(seconds=100)
+    token = jwt.encode({'exp': expiration_date}, app.config['SECRET_KEY'], algorithm='HS256')
+    return token
 
 @app.route('/books')
 def get_books():
+    token = request.args.get('token')
+
+    try:
+        jwt.decode(token, app.config['SECRET_KEY'])
+    except:
+        return jsonify({ 'error' : 'Need a valid token to view this page' }), 401
+    
     return jsonify({ 'books': Book.get_all_books() })
 
 
