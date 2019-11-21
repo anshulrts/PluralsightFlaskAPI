@@ -5,12 +5,12 @@ from settings import *
 
 import jwt, datetime
 from UserModel import User
+from functools import wraps
 
 app.config['SECRET_KEY'] = 'meow'
 
 @app.route('/login', methods=['POST'])
 def get_token():
-
     request_body = request.get_json()
     username = request_body['username']
     password = request_body['password']
@@ -24,25 +24,34 @@ def get_token():
     else:
         return Response("", 401, mimetype='application/json')
 
-@app.route('/books')
-def get_books():
-    token = request.args.get('token')
 
-    try:
-        jwt.decode(token, app.config['SECRET_KEY'])
-    except:
-        return jsonify({ 'error' : 'Need a valid token to view this page' }), 401
-    
+def token_required(f):
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        token = request.args.get('token')
+        try:
+            jwt.decode(token, app.config['SECRET_KEY'])
+            return f(*args, **kwargs)
+        except:
+            return jsonify({ 'error' : 'Need a valid token to view this page' }), 401
+    return wrapper
+
+
+@app.route('/books')
+@token_required
+def get_books():
     return jsonify({ 'books': Book.get_all_books() })
 
 
 @app.route('/books/<int:isbn>')
+@token_required
 def get_book_by_isbn(isbn):
     return_value = Book.get_book(isbn)
     return jsonify(return_value)
 
 
 @app.route('/books', methods=['POST'])
+@token_required
 def add_book():
     request_data = request.get_json()
     if validBookObject(request_data):
@@ -68,6 +77,7 @@ def validBookObject(bookObject):
 
 # PUT Request
 @app.route('/books/<int:isbn>', methods=['PUT'])
+@token_required
 def replace_book(isbn):
     req = request.get_json()
     # new_book = {
@@ -89,6 +99,7 @@ def replace_book(isbn):
 
 # PATCH Request - Just to update a part of Object. For e.g only Name/Price
 @app.route("/books/<int:isbn>", methods=['PATCH'])
+@token_required
 def update_book(isbn):
     request_data = request.get_json()
     updated_book = {}
@@ -105,6 +116,7 @@ def update_book(isbn):
 
 # Delete Request
 @app.route('/books/<int:isbn>', methods=['DELETE'])
+@token_required
 def delete_book(isbn):
     is_successful = Book.delete_book(isbn)
     
