@@ -4,14 +4,25 @@ from BookModel import *
 from settings import *
 
 import jwt, datetime
+from UserModel import User
 
 app.config['SECRET_KEY'] = 'meow'
 
-@app.route('/login')
+@app.route('/login', methods=['POST'])
 def get_token():
-    expiration_date = datetime.datetime.utcnow() + datetime.timedelta(seconds=100)
-    token = jwt.encode({'exp': expiration_date}, app.config['SECRET_KEY'], algorithm='HS256')
-    return token
+
+    request_body = request.get_json()
+    username = request_body['username']
+    password = request_body['password']
+
+    match = User.username_password_match(username, password)
+
+    if match:
+        expiration_date = datetime.datetime.utcnow() + datetime.timedelta(seconds=100)
+        token = jwt.encode({'exp': expiration_date}, app.config['SECRET_KEY'], algorithm='HS256')
+        return token
+    else:
+        return Response("", 401, mimetype='application/json')
 
 @app.route('/books')
 def get_books():
